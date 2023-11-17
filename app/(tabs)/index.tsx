@@ -1,14 +1,57 @@
-import { StyleSheet } from 'react-native';
+import { Camera, CameraType, FaceDetectionResult } from 'expo-camera';
+import { useState } from 'react';
+import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as FaceDetector from 'expo-face-detector';
 
-import EditScreenInfo from '../../components/EditScreenInfo';
-import { Text, View } from '../../components/Themed';
+const handleFacesDetected = ({ faces }: FaceDetectionResult) => { 
+  console.log(faces)
+  // console.log(faces[0].leftEyeOpenProbability)
+  // console.log(faces[0].rightEyeOpenProbability)
+  console.log(faces[0].smilingProbability)
+}; 
 
-export default function TabOneScreen() {
+export default function Page() {
+
+  const [type, setType] = useState(CameraType.front);
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+
+  if (!permission) {
+    // Camera permissions are still loading
+    return <View />;
+  }
+
+  if (!permission.granted) {
+    // Camera permissions are not granted yet
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="grant permission" />
+      </View>
+    );
+  }
+
+  function toggleCameraType() {
+    setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      <Camera style={styles.camera} type={type}
+      onFacesDetected={handleFacesDetected}
+      faceDetectorSettings={{
+        mode: FaceDetector.FaceDetectorMode.accurate,
+        detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
+        runClassifications: FaceDetector.FaceDetectorClassifications.all,
+        minDetectionInterval: 1000,
+        tracking: true,
+      }}
+      >
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
+            <Text style={styles.text}>Flip Camera</Text>
+          </TouchableOpacity>
+        </View>
+      </Camera>
     </View>
   );
 }
@@ -16,16 +59,25 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  camera: {
+    flex: 1,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  buttonContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
+    margin: 64,
+  },
+  button: {
+    flex: 1,
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });
